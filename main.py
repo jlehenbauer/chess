@@ -9,12 +9,19 @@ def main():
         print(c)
         if c.TURN:
             print("White, it's your turn.")
-            # TODO: create verification for chess notation
-            c.parse(input("Enter your move: "), True)
         else:
             print("Black, it's your turn.")
-            # TODO: create verification for chess notation
-            c.parse(input("Enter your move: "), True)
+        
+        command = input("Enter your move: ")
+
+        if command == 'exit':
+            return 0
+
+        elif command == 'log':
+            c.log()
+
+        else:
+            c.parse(command, True)
 
 
 

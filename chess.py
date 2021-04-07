@@ -3,6 +3,7 @@ class Board:
     BLACK = 0
     WHITE = 1
     TURN = 1
+    LOG = []
 
     def __init__(self):
         self.board = [
@@ -55,6 +56,9 @@ class Board:
         """
         origin = []
         destination = []
+        TAKES = 0
+        if notation[1] == 'x':
+            TAKES = 1
 
         if ord(notation[0]) - 97 < 26:
             # lower case character leading, pawn move
@@ -65,7 +69,10 @@ class Board:
                         if self.TURN == piece.color and piece.name == "Pawn":
                             print(f"moving {piece} to {notation}")
                             origin = [x, y]
-                            destination = [x, 8 - int(notation[1])]
+                            if TAKES:
+                                destination = [self.col(notation[2]), 8 - int(notation[-1])]
+                            else:
+                                destination = [x, 8 - int(notation[-1])]
 
         elif notation[0] == 'K':
             # King move
@@ -85,6 +92,8 @@ class Board:
 
         if move_now:
             self.move((origin, destination))
+
+        self.LOG.append(notation)
         
         return (origin, destination)
 
@@ -92,11 +101,13 @@ class Board:
         origin = move[0]
         destination = move[1]
         piece = copy.deepcopy(self.board[origin[1]][origin[0]])
-        if piece.verify_move(move):
+        if piece.verify_move(self.board, move):
             self.board[origin[1]][origin[0]] = None
             self.board[destination[1]][destination[0]] = piece
             self.end_turn()
             return True
+        else:
+            self.invalid_move(move)
         return False
 
     def end_turn(self):
@@ -104,6 +115,18 @@ class Board:
             self.TURN = 0
         else:
             self.TURN = 1
+
+    def invalid_move(self, move):
+        print("This move is not valid, please enter a valid move.")
+        return True
+
+    def log(self):
+        s = ""
+        for i in range(len(self.LOG)):
+            if i % 2 == 0:
+                s += f"{i // 2 + 1}. {self.LOG[i]}    {self.LOG[i+1]}"
+        print(s)
+        return s
 
 class Piece:
     pass
@@ -171,5 +194,25 @@ class Pawn(Piece):
     def __str__(self):
         return 'p'
 
-    def verify_move(self, move):
-        return True
+    def verify_move(self, board, move):
+        origin = move[0]
+        destination = move[1]
+        direction = 1
+        if not self.color:
+            direction = -1
+        print(f"Attempting to move pawn from {origin} to {destination} in direction {direction}.")
+        
+        # Forward one space (player dependent), unless blocked
+        if origin[0] == destination[0] and (origin[1] - destination[1]) * direction == 1 and board[destination[1]][destination[0]] is None:
+            return True
+        
+        # Forward two spaces (player dependent), unless blocked, and only if on starting row
+        elif origin[0] == destination[0] and ((origin[1] - destination[1]) * direction) == 2 and board[destination[1]][destination[0]] is None:
+            if (direction == 1 and origin[1] == 6) or (direction == -1 and origin[1] == 1):
+                return True
+
+        # diagonally forward one space (player dependent), only if taking
+        elif abs(destination[0] - origin[0]) == 1 and (origin[1] - destination[1]) * direction == 1 and board[destination[1]][destination[0]] is not None:
+            return True
+
+        return False
