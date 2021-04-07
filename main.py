@@ -10,11 +10,11 @@ def main():
         if c.TURN:
             print("White, it's your turn.")
             # TODO: create verification for chess notation
-            c.move(input("Enter your move: "))
+            c.parse(input("Enter your move: "), True)
         else:
             print("Black, it's your turn.")
             # TODO: create verification for chess notation
-            c.move(input("Enter your move: "))
+            c.parse(input("Enter your move: "), True)
 
 
 

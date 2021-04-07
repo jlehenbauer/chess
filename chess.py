@@ -42,20 +42,30 @@ class Board:
     def col(self, cha):
         return ord(cha) - 97
 
-    def move(self, notation):
-        if len(notation) == 2:
-            # pawn move
-            # Find appropriate pawn
+    
+    def parse(self, notation, move_now = False):
+        """
+        Translates traditional chess notation to a 'current space, new space' format.
+
+        Parameters: 
+            notation (string): Traditional chess notation for a move. Kb2 or e5, for example.
+
+        Returns: 
+            move (tuple): Returns two pairs in a tuple signifying the origination of the piece and it's destination.
+        """
+        origin = []
+        destination = []
+
+        if ord(notation[0]) - 97 < 26:
+            # lower case character leading, pawn move
             for y in range(len(self.board)):
                 for x in range(len(self.board[y])):
                     piece = copy.deepcopy(self.board[y][x])
                     if self.col(notation[0]) == x and piece is not None:
                         if self.TURN == piece.color and piece.name == "Pawn":
                             print(f"moving {piece} to {notation}")
-                            self.board[8 - int(notation[1])][x] = piece
-                            self.board[y][x] = None
-                            self.end_turn()
-                            return True
+                            origin = [x, y]
+                            destination = [x, 8 - int(notation[1])]
 
         elif notation[0] == 'K':
             # King move
@@ -73,6 +83,21 @@ class Board:
             # Knight move
             pass
 
+        if move_now:
+            self.move((origin, destination))
+        
+        return (origin, destination)
+
+    def move(self, move):
+        origin = move[0]
+        destination = move[1]
+        piece = copy.deepcopy(self.board[origin[1]][origin[0]])
+        if piece.verify_move(move):
+            self.board[origin[1]][origin[0]] = None
+            self.board[destination[1]][destination[0]] = piece
+            self.end_turn()
+            return True
+        return False
 
     def end_turn(self):
         if self.TURN:
@@ -90,6 +115,9 @@ class King(Piece):
 
     def __str__(self):
         return 'K'
+
+    def verify_move(self, move):
+        return True
     
 class Queen(Piece):
     name = "Queen"
@@ -98,6 +126,9 @@ class Queen(Piece):
 
     def __str__(self):
         return 'Q'
+
+    def verify_move(self, move):
+        return True
     
 class Rook(Piece):
     name = "Rook"
@@ -106,6 +137,9 @@ class Rook(Piece):
 
     def __str__(self):
         return 'R'
+
+    def verify_move(self, move):
+        return True
     
 class Bishop(Piece):
     name = "Bishop"
@@ -114,6 +148,9 @@ class Bishop(Piece):
 
     def __str__(self):
         return 'B'
+
+    def verify_move(self, move):
+        return True
     
 class Knight(Piece):
     name = "Knight"
@@ -122,6 +159,9 @@ class Knight(Piece):
 
     def __str__(self):
         return 'N'
+
+    def verify_move(self, move):
+        return True
     
 class Pawn(Piece):
     name = "Pawn"
@@ -130,3 +170,6 @@ class Pawn(Piece):
 
     def __str__(self):
         return 'p'
+
+    def verify_move(self, move):
+        return True
