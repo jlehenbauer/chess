@@ -104,7 +104,11 @@ class Board:
 
         if origin == [] or destination == []:
             print("Sorry, that move appears to be invalid.")
-            return ([],[])
+            return None
+
+        if TAKES and self.board[origin[1]][origin[0]].color == self.board[destination[1]][destination[0]].color:
+            print("You're not allowed to take your own piece.")
+            return None
 
         if move_now:
             self.move((origin, destination))
