@@ -20,6 +20,9 @@ def main():
         elif command == 'log':
             c.log()
 
+        elif command == '':
+            pass
+
         else:
             c.parse(command, True)
 

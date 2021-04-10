@@ -84,7 +84,34 @@ class Board:
             pass
         elif notation[0] == 'R':
             # Rook move
-            pass
+            destination = [self.col(notation[-2]), 8 - int(notation[-1])]
+            # travel horiz/vert, find rooks
+            for direction in ([1, 0], [0, 1], [-1, 0], [0, -1]):
+                i = 1
+                location = [destination[0] + (i * direction[0]), destination[1] + (i * direction[1])]
+                while self.board[location[1]][location[0]] is None:
+                    i += 1
+                if self.board[location[1]][location[0]].name == "Rook":
+                    pass
+            # there's definitely a better way to find this rook...
+            for y in range(len(self.board)):
+                for x in range(len(self.board[y])):
+                    if self.board[y][x] is not None:
+                        piece = copy.deepcopy(self.board[y][x])
+                        if self.TURN == piece.color and piece.name == "Rook":
+                            print(f"{piece} is at {x}, {y}")
+                            if x == destination[0] or y == destination[1]:
+                                if origin == []:
+                                    origin = [x, y]
+                                else:
+                                    if len(notation) < 4:
+                                        print("Please use the row/column to clarify which rook to move.")
+                                        origin = []
+                                    elif isinstance(notation[1], str):
+                                        if x == self.col(notation[1]): 
+                                            origin = [x, y]
+                                    elif y == 8 - int(notation[1]):
+                                        origin = [x, y]
         elif notation[0] == 'B':
             # Bishop move
             pass
@@ -102,7 +129,7 @@ class Board:
                                 origin = [x, y]
                                 print(origin)
 
-        if origin == [] or destination == []:
+        if origin == [] or destination == [] or origin == destination:
             print("Sorry, that move appears to be invalid.")
             return None
 
@@ -152,13 +179,18 @@ class Board:
 
 class Piece:
     def check_horizontal(self, board, move):
-        for i in range(move[0][0], move[1][0]):
+        begin = min(move[0][0], move[1][0])
+        end = max(move[0][0], move[1][0])
+        for i in range(begin + 1, end):
             if board[move[0][1]][i] is not None:
                 return False
         return True
 
     def check_vertical(self, board, move):
-        for i in range(move[0][1], move[1][1]):
+        begin = min(move[0][1], move[1][1])
+        end = max(move[0][1], move[1][1])
+        print(f"Attempting vertical move from {begin} to {end}.")
+        for i in range(begin + 1, end):
             if board[i][move[0][0]] is not None:
                 return False
         return True
@@ -203,7 +235,7 @@ class Rook(Piece):
 
         if origin[0] == destination[0] and self.check_vertical(board, move):
             return True
-        elif origin[1] == destination[1] and self.check_vertical(board, move):
+        elif origin[1] == destination[1] and self.check_horizontal(board, move):
             return True
         return False
 
