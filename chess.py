@@ -1,4 +1,6 @@
 import copy
+
+
 class Board:
     BLACK = 0
     WHITE = 1
@@ -43,7 +45,6 @@ class Board:
     def col(self, cha):
         return ord(cha) - 97
 
-    
     def parse(self, notation, move_now = False):
         """
         Translates traditional chess notation to a 'current space, new space' format.
@@ -85,14 +86,6 @@ class Board:
         elif notation[0] == 'R':
             # Rook move
             destination = [self.col(notation[-2]), 8 - int(notation[-1])]
-            # travel horiz/vert, find rooks
-            for direction in ([1, 0], [0, 1], [-1, 0], [0, -1]):
-                i = 1
-                location = [destination[0] + (i * direction[0]), destination[1] + (i * direction[1])]
-                while self.board[location[1]][location[0]] is None:
-                    i += 1
-                if self.board[location[1]][location[0]].name == "Rook":
-                    pass
             # there's definitely a better way to find this rook...
             for y in range(len(self.board)):
                 for x in range(len(self.board[y])):
@@ -177,7 +170,11 @@ class Board:
         print(s)
         return s
 
+
 class Piece:
+    def __init__(self, color):
+        self.color = color
+
     def check_horizontal(self, board, move):
         begin = min(move[0][0], move[1][0])
         end = max(move[0][0], move[1][0])
@@ -199,35 +196,44 @@ class Piece:
         return True
 
 
+
 class King(Piece):
     name = "King"
-    def __init__(self, color):
-        self.color = color
+    pt_val = None
 
     def __str__(self):
-        return 'K'
+        if self.color > 0:
+            return 'K'
+        else:
+            return 'k'
 
     def verify_move(self, move):
         return True
-    
+
+
 class Queen(Piece):
     name = "Queen"
-    def __init__(self, color):
-        self.color = color
+    pt_val = 9
 
     def __str__(self):
-        return 'Q'
+        if self.color > 0:
+            return 'Q'
+        else:
+            return 'q'
 
     def verify_move(self, move):
         return True
-    
+
+
 class Rook(Piece):
     name = "Rook"
-    def __init__(self, color):
-        self.color = color
+    pt_val = 5
 
     def __str__(self):
-        return 'R'
+        if self.color > 0:
+            return 'R'
+        else:
+            return 'r'
 
     def verify_move(self, board, move):
         origin = move[0]
@@ -239,25 +245,29 @@ class Rook(Piece):
             return True
         return False
 
-    
 class Bishop(Piece):
     name = "Bishop"
-    def __init__(self, color):
-        self.color = color
+    pt_val = 3
 
     def __str__(self):
-        return 'B'
+        if self.color > 0:
+            return 'B'
+        else:
+            return 'b'
 
     def verify_move(self, move):
         return True
-    
+
+
 class Knight(Piece):
     name = "Knight"
-    def __init__(self, color):
-        self.color = color
+    pt_val = 3
 
     def __str__(self):
-        return 'N'
+        if self.color > 0:
+            return 'N'
+        else:
+            return 'n'
 
     def verify_move(self, board, move):
         origin = move[0]
@@ -272,11 +282,13 @@ class Knight(Piece):
     
 class Pawn(Piece):
     name = "Pawn"
-    def __init__(self, color):
-        self.color = color
+    pt_vl = 1
 
     def __str__(self):
-        return 'p'
+        if self.color > 0:
+            return 'P'
+        else:
+            return 'p'
 
     def verify_move(self, board, move):
         origin = move[0]
