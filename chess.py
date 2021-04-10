@@ -61,8 +61,10 @@ class Board:
         if notation[1] == 'x':
             TAKES = 1
 
-        if ord(notation[0]) - 97 < 26:
+        if 0 <= ord(notation[0]) - 97 < 26:
             # lower case character leading, pawn move
+
+            # there's definitely a better way to find this pawn...
             for y in range(len(self.board)):
                 for x in range(len(self.board[y])):
                     piece = copy.deepcopy(self.board[y][x])
@@ -89,7 +91,25 @@ class Board:
             pass
         elif notation[0] == 'N':
             # Knight move
-            pass
+            destination = [self.col(notation[-2]), 8 - int(notation[-1])]
+            # there's definitely a better way to find this knight...
+            for y in range(len(self.board)):
+                for x in range(len(self.board[y])):
+                    piece = copy.deepcopy(self.board[y][x])
+                    if piece is not None:
+                        if self.TURN == piece.color and piece.name == "Knight":
+                            print(f"{piece} is at {x}, {y}")
+                            if abs(y - destination[1]) == 2 and abs(x - destination[0]) == 1 or abs(x - destination[0]) == 2 and abs(y- destination[1]) == 1:
+                                origin = [x, y]
+                                print(origin)
+
+        if origin == [] or destination == []:
+            print("Sorry, that move appears to be invalid.")
+            return None
+
+        if TAKES and self.board[origin[1]][origin[0]].color == self.board[destination[1]][destination[0]].color:
+            print("You're not allowed to take your own piece.")
+            return None
 
         if move_now:
             self.move((origin, destination))
@@ -101,6 +121,8 @@ class Board:
     def move(self, move):
         origin = move[0]
         destination = move[1]
+        print(origin)
+        print(destination)
         piece = copy.deepcopy(self.board[origin[1]][origin[0]])
         if piece.verify_move(self.board, move):
             self.board[origin[1]][origin[0]] = None
@@ -133,6 +155,22 @@ class Board:
 class Piece:
     def __init__(self, color):
         self.color = color
+
+    def check_horizontal(self, board, move):
+        for i in range(move[0][0], move[1][0]):
+            if board[move[0][1]][i] is not None:
+                return False
+        return True
+
+    def check_vertical(self, board, move):
+        for i in range(move[0][1], move[1][1]):
+            if board[i][move[0][0]] is not None:
+                return False
+        return True
+
+    def check_diagonal(self, board, move):
+        return True
+
 
 
 class King(Piece):
@@ -173,9 +211,15 @@ class Rook(Piece):
         else:
             return 'r'
 
-    def verify_move(self, move):
-        return True
+    def verify_move(self, board, move):
+        origin = move[0]
+        destination = move[1]
 
+        if origin[0] == destination[0] and self.check_vertical(board, move):
+            return True
+        elif origin[1] == destination[1] and self.check_vertical(board, move):
+            return True
+        return False
 
 class Bishop(Piece):
     name = "Bishop"
@@ -201,10 +245,17 @@ class Knight(Piece):
         else:
             return 'n'
 
-    def verify_move(self, move):
-        return True
+    def verify_move(self, board, move):
+        origin = move[0]
+        destination = move[1]
 
+        if abs(origin[1] - destination[1]) == 2 and abs(origin[0] - destination[0]) == 1:
+            return True
+        elif abs(origin[0] - destination[0]) == 2 and abs(origin[1] - destination[1]) == 1:
+            return True
 
+        return False
+    
 class Pawn(Piece):
     name = "Pawn"
     pt_vl = 1
@@ -221,7 +272,6 @@ class Pawn(Piece):
         direction = 1
         if not self.color:
             direction = -1
-        print(f"Attempting to move pawn from {origin} to {destination} in direction {direction}.")
         
         # Forward one space (player dependent), unless blocked
         if origin[0] == destination[0] and (origin[1] - destination[1]) * direction == 1 and board[destination[1]][destination[0]] is None:
