@@ -18,7 +18,7 @@ def main():
             return 0
 
         elif command == 'log':
-            c.log()
+            print(c.log())
 
         elif command == '':
             pass

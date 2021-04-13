@@ -1,11 +1,12 @@
 import copy
-
+from colorama import Fore, Back, init
 
 class Board:
     BLACK = 0
     WHITE = 1
     TURN = 1
     LOG = []
+    init(autoreset=True)
 
     def __init__(self):
         self.board = [
@@ -100,10 +101,11 @@ class Board:
                                     if len(notation) < 4:
                                         print("Please use the row/column to clarify which rook to move.")
                                         origin = []
-                                    elif isinstance(notation[1], str):
-                                        if x == self.col(notation[1]): 
-                                            origin = [x, y]
-                                    elif y == 8 - int(notation[1]):
+                                    else:
+                                        try:
+                                            y == 8 - int(notation[1])
+                                        except ValueError:
+                                            x == self.col(notation[1])
                                         origin = [x, y]
         elif notation[0] == 'B':
             # Bishop move
@@ -165,13 +167,18 @@ class Board:
     def log(self):
         s = ""
         for i in range(len(self.LOG)):
-            if i % 2 == 0:
+            if i % 2 == 0 and i + 1 < len(self.LOG):
                 s += f"{i // 2 + 1}. {self.LOG[i]}    {self.LOG[i+1]}"
-        print(s)
+            else:
+                s += f"{i // 2 + 1}. {self.LOG[i]}"
         return s
 
 
 class Piece:
+    B_COLOR = Fore.RED
+    W_COLOR = Fore.WHITE
+    name = ''
+
     def __init__(self, color):
         self.color = color
 
@@ -195,17 +202,26 @@ class Piece:
     def check_diagonal(self, board, move):
         return True
 
+    def printB(self, text):
+        # red
+        return "\033[91m" + text + "\033[00m"
+
+    def printW(self, text):
+        # cyan
+        return "\033[96m" + text + "\033[00m"
+
+    def __str__(self):
+        if self.name is not '':
+            if self.name == "Knight":
+                return self.printW('N') if self.color else self.printB('n')
+
+        return self.printW(self.name[0]) if self.color else self.printB(self.name[0].lower())
+
 
 
 class King(Piece):
     name = "King"
     pt_val = None
-
-    def __str__(self):
-        if self.color > 0:
-            return 'K'
-        else:
-            return 'k'
 
     def verify_move(self, move):
         return True
@@ -215,12 +231,6 @@ class Queen(Piece):
     name = "Queen"
     pt_val = 9
 
-    def __str__(self):
-        if self.color > 0:
-            return 'Q'
-        else:
-            return 'q'
-
     def verify_move(self, move):
         return True
 
@@ -228,12 +238,6 @@ class Queen(Piece):
 class Rook(Piece):
     name = "Rook"
     pt_val = 5
-
-    def __str__(self):
-        if self.color > 0:
-            return 'R'
-        else:
-            return 'r'
 
     def verify_move(self, board, move):
         origin = move[0]
@@ -249,12 +253,6 @@ class Bishop(Piece):
     name = "Bishop"
     pt_val = 3
 
-    def __str__(self):
-        if self.color > 0:
-            return 'B'
-        else:
-            return 'b'
-
     def verify_move(self, move):
         return True
 
@@ -262,12 +260,6 @@ class Bishop(Piece):
 class Knight(Piece):
     name = "Knight"
     pt_val = 3
-
-    def __str__(self):
-        if self.color > 0:
-            return 'N'
-        else:
-            return 'n'
 
     def verify_move(self, board, move):
         origin = move[0]
@@ -283,12 +275,6 @@ class Knight(Piece):
 class Pawn(Piece):
     name = "Pawn"
     pt_vl = 1
-
-    def __str__(self):
-        if self.color > 0:
-            return 'P'
-        else:
-            return 'p'
 
     def verify_move(self, board, move):
         origin = move[0]
