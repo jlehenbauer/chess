@@ -31,15 +31,36 @@ class Board:
         [Rook(1), Knight(1), Bishop(1), Queen(1), King(1), Bishop(1), Knight(1), Rook(1)]]
 
     def __str__(self):
+        greybg = '\033[47m'
+        blackbg = '\033[00m'
         s = '  +---+---+---+---+---+---+---+---+ \n'
         for y in range(len(self.board)):
-            s += str(8 - y) + ' | '
+            s += str(8 - y) + ' |'
+            if y % 2 == 0:
+                s += greybg
+            s += ' ' 
+
             for x in range(len(self.board[y])):
-                if self.board[y][x] is None:
-                    s += '  | '
+                if (x + y) % 2 == 0:
+                    s += greybg
+                    if self.board[y][x] is None:
+                        s += '  ' + blackbg + '| '
+                    else:
+                        s += str(self.board[y][x]) + greybg +' ' + blackbg + '| '
                 else:
-                    s += str(self.board[y][x]) + ' | '
-            s += '\n  +---+---+---+---+---+---+---+---+ \n'
+                    if self.board[y][x] is None:
+                        if x < 7:
+                            s += '  |' + greybg + ' '
+                        else: 
+                            s += '  | '
+                    else:
+                        s += str(self.board[y][x]) + ' |'
+                        if x < 7:
+                            s += greybg + ' '
+                        else: 
+                            s += ' '
+                s += blackbg
+            s += '\n ' + blackbg + ' +---+---+---+---+---+---+---+---+ \n'
         s += '    a   b   c   d   e   f   g   h'
         return s
 
