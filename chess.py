@@ -110,7 +110,17 @@ class Board:
             pass
         elif notation[0] == 'Q':
             # Queen move
-            pass
+            destination = [self.col(notation[-2]), 8 - int(notation[-1])]
+
+            for y in range(len(self.board)):
+                for x in range(len(self.board[y])):
+                    piece = self.board[y][x]
+                    if piece is not None:
+                        if self.TURN == piece.color and piece.name == "Queen":
+                            origin = [x, y]
+            print(f"Moving Queen from {origin} to {destination}")
+
+
         elif notation[0] == 'R':
             # Rook move
             destination = [self.col(notation[-2]), 8 - int(notation[-1])]
@@ -275,13 +285,13 @@ class Piece:
 
     def check_diagonal(self, board, move):
         if move[0][0] - move[1][0] > 0:
-            dx = 1
-        else:
             dx = -1
-        if move[0][1] - move[1][1] > 0:
-            dy = 1
         else:
+            dx = 1
+        if move[0][1] - move[1][1] > 0:
             dy = -1
+        else:
+            dy = 1
         location = [move[0][0] + dx, move[0][1] + dy]
         while location != move[1]:
             if board[location[1]][location[0]] is not None:
@@ -320,7 +330,17 @@ class Queen(Piece):
     pt_val = 9
 
     def verify_move(self, board, move):
-        return True
+
+        if move[0][0] != move[1][0] and move[0][1] != move[1][1]:
+            return self.check_diagonal(board, move)
+
+        elif move[0][0] == move[1][0]:
+            return self.check_horizontal(board, move)
+
+        elif move[0][1] == move[1][1]: 
+            return self.check_vertical(board, move)
+
+        return False
 
 
 class Rook(Piece):
@@ -342,7 +362,7 @@ class Bishop(Piece):
     pt_val = 3
 
     def verify_move(self, board, move):
-        return True
+        return self.check_diagonal(board, move)
 
 
 class Knight(Piece):
