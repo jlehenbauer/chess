@@ -156,7 +156,30 @@ class Board:
 
         elif notation[0] == 'B':
             # Bishop move
-            pass
+            destination = [self.col(notation[-2]), 8 - int(notation[-1])]
+            # look in each of the 4 directions and find possible matching rooks
+            directions = [[1, 1], [-1, 1], [-1, -1], [1, -1]]
+            bishop = None
+            for direction in directions:
+                loc = [destination[0] + direction[0], destination[1] + direction[1]]
+                # keep looking in that direction until finding a piece, if it's the right color bishop, store it
+                while 0 <= loc[0] <= 7 and 0 <= loc[1] <= 7:
+                    piece = self.board[loc[1]][loc[0]]
+                    if piece is not None:
+                        if piece.name == "Bishop" and piece.color == self.TURN:
+                            bishop = [loc[0], loc[1]]
+                        break
+                    loc[0] += direction[0]
+                    loc[1] += direction[1]
+
+            # we didn't find any bishops, there must be a mistake
+            if bishop is None:
+                origin = []
+                
+            # move the bishop we found!
+            else:
+                origin = bishop
+
         elif notation[0] == 'N':
             # Knight move
             destination = [self.col(notation[-2]), 8 - int(notation[-1])]
@@ -251,6 +274,20 @@ class Piece:
         return True
 
     def check_diagonal(self, board, move):
+        if move[0][0] - move[1][0] > 0:
+            dx = 1
+        else:
+            dx = -1
+        if move[0][1] - move[1][1] > 0:
+            dy = 1
+        else:
+            dy = -1
+        location = [move[0][0] + dx, move[0][1] + dy]
+        while location != move[1]:
+            if board[location[1]][location[0]] is not None:
+                return False
+            location[0] += dx
+            location[1] += dy
         return True
 
     def printB(self, text):
@@ -274,7 +311,7 @@ class King(Piece):
     name = "King"
     pt_val = None
 
-    def verify_move(self, move):
+    def verify_move(self, board, move):
         return True
 
 
@@ -282,7 +319,7 @@ class Queen(Piece):
     name = "Queen"
     pt_val = 9
 
-    def verify_move(self, move):
+    def verify_move(self, board, move):
         return True
 
 
@@ -304,7 +341,7 @@ class Bishop(Piece):
     name = "Bishop"
     pt_val = 3
 
-    def verify_move(self, move):
+    def verify_move(self, board, move):
         return True
 
 
