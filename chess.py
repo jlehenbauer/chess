@@ -94,10 +94,16 @@ class Board:
                         if self.TURN == piece.color and piece.name == "Pawn":
                             print(f"moving {piece} to {notation}")
                             origin = [x, y]
-                            if TAKES:
+                            if TAKES and len(notation) == 4:
                                 destination = [self.col(notation[2]), 8 - int(notation[-1])]
-                            else:
+                            elif len(notation) == 2:
                                 destination = [x, 8 - int(notation[-1])]
+                            elif len(notation) == 3:
+                                print("It looks like you meant to capture. Please use 'x' to indicate capturing.")
+                                print("For example, 'exd4' indicates e pawn capturing on d4.")
+                                destination = []
+                            else:
+                                destination = []
 
         elif notation[0] == 'K':
             # King move
@@ -108,26 +114,46 @@ class Board:
         elif notation[0] == 'R':
             # Rook move
             destination = [self.col(notation[-2]), 8 - int(notation[-1])]
-            # there's definitely a better way to find this rook...
-            for y in range(len(self.board)):
-                for x in range(len(self.board[y])):
-                    if self.board[y][x] is not None:
-                        piece = copy.deepcopy(self.board[y][x])
-                        if self.TURN == piece.color and piece.name == "Rook":
-                            print(f"{piece} is at {x}, {y}")
-                            if x == destination[0] or y == destination[1]:
-                                if origin == []:
-                                    origin = [x, y]
-                                else:
-                                    if len(notation) < 4:
-                                        print("Please use the row/column to clarify which rook to move.")
-                                        origin = []
-                                    else:
-                                        try:
-                                            y == 8 - int(notation[1])
-                                        except ValueError:
-                                            x == self.col(notation[1])
-                                        origin = [x, y]
+            # look in each of the 4 directions and find possible matching rooks
+            directions = [[1, 0], [0, 1], [-1, 0], [0, -1]]
+            rooks = []
+            for direction in directions:
+                loc = [destination[0] + direction[0], destination[1] + direction[1]]
+                # keep looking in that direction until finding a piece, if it's the right color rook, store it
+                while 0 <= loc[0] <= 7 and 0 <= loc[1] <= 7:
+                    piece = self.board[loc[1]][loc[0]]
+                    if piece is not None:
+                        if piece.name == "Rook" and piece.color == self.TURN:
+                            rooks.append([loc[0], loc[1]])
+                        break
+                    loc[0] += direction[0]
+                    loc[1] += direction[1]
+
+            # we didn't find any rooks, there must be a mistake
+            if len(rooks) == 0:
+                origin = []
+
+            # move the rook we found!
+            elif len(rooks) == 1:
+                origin = rooks[0]
+
+            # we found more than one rook, check the notation for which should move
+            elif len(rooks) > 1:
+                if len(notation) < 4:
+                    print("Please use the row/column to clarify which rook to move.")
+                    origin = []
+                else:
+                    try:
+                        y_val = 8 - int(notation[1])
+                        for rook in rooks:
+                            if rook[1] == y_val:
+                                origin = rook
+                    except ValueError:
+                        x_val = self.col(notation[1])
+                        for rook in rooks:
+                            if rook[0] == x_val:
+                                origin = rook
+
         elif notation[0] == 'B':
             # Bishop move
             pass
@@ -149,15 +175,19 @@ class Board:
             print("Sorry, that move appears to be invalid.")
             return None
 
-        if TAKES and self.board[origin[1]][origin[0]].color == self.board[destination[1]][destination[0]].color:
-            print("You're not allowed to take your own piece.")
-            return None
+        if self.board[destination[1]][destination[0]] is not None:
+            if self.board[origin[1]][origin[0]].color == self.board[destination[1]][destination[0]].color:
+                print("You're not allowed to take your own piece.")
+                return None
+
+        if self.board[destination[1]][destination[0]] is not None and not TAKES:
+            print("When taking a piece, please use an 'x' after the piece you're moving. For example: 'Rxe8'.")
+            notation = notation[0] + 'x' + notation[1:]
 
         if move_now:
-            self.move((origin, destination))
+            if self.move((origin, destination)):
+                self.LOG.append(notation)
 
-        self.LOG.append(notation)
-        
         return (origin, destination)
 
     def move(self, move):
@@ -189,9 +219,9 @@ class Board:
         s = ""
         for i in range(len(self.LOG)):
             if i % 2 == 0 and i + 1 < len(self.LOG):
-                s += f"{i // 2 + 1}. {self.LOG[i]}    {self.LOG[i+1]}"
-            else:
-                s += f"{i // 2 + 1}. {self.LOG[i]}"
+                s += f"{i // 2 + 1}. {self.LOG[i]}    {self.LOG[i+1]} \n"
+            elif i + 1 == len(self.LOG):
+                s += f"{i // 2 + 1}. {self.LOG[i]} \n"
         return s
 
 
