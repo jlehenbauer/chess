@@ -107,7 +107,15 @@ class Board:
 
         elif notation[0] == 'K':
             # King move
-            pass
+            destination = [self.col(notation[-2]), 8 - int(notation[-1])]
+
+            for y in range(len(self.board)):
+                for x in range(len(self.board[y])):
+                    piece = self.board[y][x]
+                    if piece is not None:
+                        if self.TURN == piece.color and piece.name == "King":
+                            origin = [x, y]
+                            
         elif notation[0] == 'Q':
             # Queen move
             destination = [self.col(notation[-2]), 8 - int(notation[-1])]
@@ -118,7 +126,8 @@ class Board:
                     if piece is not None:
                         if self.TURN == piece.color and piece.name == "Queen":
                             origin = [x, y]
-            print(f"Moving Queen from {origin} to {destination}")
+            # DEBUG
+            #print(f"Moving Queen from {origin} to {destination}")
 
 
         elif notation[0] == 'R':
@@ -309,9 +318,8 @@ class Piece:
         return "\033[96m" + text + "\033[00m"
 
     def __str__(self):
-        if self.name is not '':
-            if self.name == "Knight":
-                return self.printW('N') if self.color else self.printB('n')
+        if self.name == "Knight":
+            return self.printW('N') if self.color else self.printB('n')
 
         return self.printW(self.name[0]) if self.color else self.printB(self.name[0].lower())
 
@@ -322,6 +330,26 @@ class King(Piece):
     pt_val = None
 
     def verify_move(self, board, move):
+        # This verification needs to be the most rigid:
+        # - Cannot move into check!!
+        # - - Diagonals are clear of Bishops and Queens
+        # - - Rank/Files are clear of Rooks and Queens
+        # - - No Knights in relevant spaces
+        # - - No diagonal (single space) Pawns
+        # Consider making "threatening() function to return threatened spaces?
+
+        # 0. check for knights...
+        # Move in every direction until hitting 
+        # 1. end of board, fine
+        # 2. same-color piece, fine
+        # 3. opposite-color piece, check:
+        #   i. diagonal B/Q: False
+        #   ii. horiz/vert R/Q: False
+        #   iii. pawns within 1 space: False
+        # 4. All clear!
+        if abs(move[0][0] - move[1][0]) > 1 or abs(move[0][1] - move[1][1]) > 1:
+            return False
+
         return True
 
 
