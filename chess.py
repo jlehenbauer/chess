@@ -30,6 +30,12 @@ class Board:
         [Pawn(1), Pawn(1), Pawn(1), Pawn(1), Pawn(1), Pawn(1), Pawn(1), Pawn(1)],
         [Rook(1), Knight(1), Bishop(1), Queen(1), King(1), Bishop(1), Knight(1), Rook(1)]]
 
+    def verbose(self):
+        for y in range(len(self.board)):
+            for item in self.board[y]:
+                if item is not None:
+                    item.verbose = True
+
     def __str__(self):
         greybg = '\033[47m'
         blackbg = '\033[00m'
@@ -274,6 +280,7 @@ class Piece:
 
     def __init__(self, color):
         self.color = color
+        self.verbose = False
 
     def check_horizontal(self, board, move):
         begin = min(move[0][0], move[1][0])
@@ -286,7 +293,8 @@ class Piece:
     def check_vertical(self, board, move):
         begin = min(move[0][1], move[1][1])
         end = max(move[0][1], move[1][1])
-        print(f"Attempting vertical move from {begin} to {end}.")
+        if self.verbose:
+            print(f"Attempting vertical move from {begin} to {end}.")
         for i in range(begin + 1, end):
             if board[i][move[0][0]] is not None:
                 return False
@@ -307,6 +315,32 @@ class Piece:
                 return False
             location[0] += dx
             location[1] += dy
+        return True
+
+    def check_directions(self, board, move, directions, fears, distance = 8):
+        destination = move[1]
+        for direction in directions:
+            position = [destination[0] + direction[0], destination[1] + direction[1]]
+            travel = 1
+            while 0 <= position[0] <= 7 and 0 <= position[1] <= 7 and travel <= distance:
+                if (self.verbose):
+                    print(f"Checking {position} for {fears}.")
+                if board[position[1]][position[0]] is not None:
+                    encounter = board[position[1]][position[0]]
+                    if self.verbose:
+                        print(f"Found {'White' if encounter.color else 'Black'} {encounter.name}")
+                    if encounter.color != self.color and encounter.name in fears:
+                        if self.verbose:
+                            print("Threat.")
+                        return False
+                    # Found a piece that wasn't a threat
+                    else:
+                        if self.verbose:
+                            print("Not a threat.")
+                        break
+                position[0] += direction[0]
+                position[1] += direction[1]
+                travel += 1
         return True
 
     def printB(self, text):
@@ -347,8 +381,66 @@ class King(Piece):
         #   ii. horiz/vert R/Q: False
         #   iii. pawns within 1 space: False
         # 4. All clear!
-        if abs(move[0][0] - move[1][0]) > 1 or abs(move[0][1] - move[1][1]) > 1:
+
+        origin = move[0]
+        destination = move[1]
+
+        # Check that move is only one space away
+        if abs(origin[0] - destination[0]) > 1 or abs(origin[1] - destination[1]) > 1:
+            if self.verbose:
+                print("Kings can't move more than one space.")
             return False
+
+        # Check for Knights
+        for spot in [[-2, -1], [-2, 1], [2, -1], [2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2]]:
+            try:
+                encounter = board[destination[1] + spot[1]][destination[0] + spot[0]]
+                if encounter.name == "Knight" and encounter.color != self.color:
+                    if self.verbose:
+                        print("Enemy knight threatens this space. You cannot move into check.")
+                    return False
+            except (IndexError, AttributeError):
+                pass
+
+        # Check diagonals for Bishops and Queens of the opposite color
+        directions = [[1, 1], [1, -1], [-1, 1], [-1, -1]]
+        fears = ["Bishop", "Queen"]
+        if not self.check_directions(board, move, directions, fears):
+            if self.verbose:
+                print("An enemy bishop or queen occupies this diagonal. You cannot move into check.")
+            return False
+
+        # Check horizontal/vertical directions for Rooks and Queens of the opposite color
+        directions = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+        fears = ["Rook", "Queen"]
+        if not self.check_directions(board, move, directions, fears):
+            if self.verbose:
+                print("An enemy rook or queen occupies this rank/file. You cannot move into check.")
+            return False
+
+        # Check for opposing pawns in the relevant spaces
+        # Black king fears pawns at [1, 1] and [-1, 1] of destination
+        # White king fears pawns at [1, -1] and [-1, -1]
+        if self.color:
+            if not self.check_directions(board, move, [[1, -1], [-1, -1]], ["Pawn"], 1):
+                if self.verbose:
+                    print("An enemy pawn threatens that space. You cannot move into check.")
+                return False
+
+        else:
+            if not self.check_directions(board, move, [[1, 1], [-1, 1]], ["Pawn"], 1):
+                if self.verbose:
+                    print("An enemy pawn threatens that space. You cannot move into check.")
+                return False
+
+        # Check for presence of enemy King in any direction
+        directions = [[1, 1], [1, 0], [1, -1], [0, -1], [-1, -1], [-1, 0], [-1, 1], [0, -1]]
+        fears = ["King"]
+        distance = 1
+        if not self.check_directions(board, move, directions, fears, distance):
+            if self.verbose:
+                print("An enemy king threatens that space. You cannot move into check.")
+                return False
 
         return True
 
@@ -379,10 +471,11 @@ class Rook(Piece):
         origin = move[0]
         destination = move[1]
 
-        if origin[0] == destination[0] and self.check_vertical(board, move):
-            return True
-        elif origin[1] == destination[1] and self.check_horizontal(board, move):
-            return True
+        if origin[0] == destination[0]:
+            return self.check_vertical(board, move)
+        elif origin[1] == destination[1]:
+            return self.check_horizontal(board, move)
+
         return False
 
 class Bishop(Piece):
