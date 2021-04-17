@@ -5,6 +5,8 @@ def main():
 
     c.set_standard()
 
+    c.verbose()
+
     while True:
         print(c)
         if c.TURN:
