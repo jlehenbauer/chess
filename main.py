@@ -5,11 +5,11 @@ def main():
 
     c.set_standard()
 
-    c.verbose()
+    c.set_verbose()
 
     while True:
         print(c)
-        if c.TURN:
+        if c.turn:
             print("White, it's your turn.")
         else:
             print("Black, it's your turn.")

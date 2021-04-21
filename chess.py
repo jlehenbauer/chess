@@ -4,9 +4,10 @@ from colorama import Fore, Back, init
 class Board:
     BLACK = 0
     WHITE = 1
-    TURN = 1
+    turn = 1
     LOG = []
     init(autoreset=True)
+    verbose = False
 
     def __init__(self):
         self.board = [
@@ -30,7 +31,8 @@ class Board:
         [Pawn(1), Pawn(1), Pawn(1), Pawn(1), Pawn(1), Pawn(1), Pawn(1), Pawn(1)],
         [Rook(1), Knight(1), Bishop(1), Queen(1), King(1), Bishop(1), Knight(1), Rook(1)]]
 
-    def verbose(self):
+    def set_verbose(self):
+        self.verbose = True
         for y in range(len(self.board)):
             for item in self.board[y]:
                 if item is not None:
@@ -97,7 +99,7 @@ class Board:
                 for x in range(len(self.board[y])):
                     piece = copy.deepcopy(self.board[y][x])
                     if self.col(notation[0]) == x and piece is not None:
-                        if self.TURN == piece.color and piece.name == "Pawn":
+                        if self.turn == piece.color and piece.name == "Pawn":
                             print(f"moving {piece} to {notation}")
                             origin = [x, y]
                             if TAKES and len(notation) == 4:
@@ -119,7 +121,7 @@ class Board:
                 for x in range(len(self.board[y])):
                     piece = self.board[y][x]
                     if piece is not None:
-                        if self.TURN == piece.color and piece.name == "King":
+                        if self.turn == piece.color and piece.name == "King":
                             origin = [x, y]
                             
         elif notation[0] == 'Q':
@@ -130,7 +132,7 @@ class Board:
                 for x in range(len(self.board[y])):
                     piece = self.board[y][x]
                     if piece is not None:
-                        if self.TURN == piece.color and piece.name == "Queen":
+                        if self.turn == piece.color and piece.name == "Queen":
                             origin = [x, y]
             # DEBUG
             #print(f"Moving Queen from {origin} to {destination}")
@@ -148,7 +150,7 @@ class Board:
                 while 0 <= loc[0] <= 7 and 0 <= loc[1] <= 7:
                     piece = self.board[loc[1]][loc[0]]
                     if piece is not None:
-                        if piece.name == "Rook" and piece.color == self.TURN:
+                        if piece.name == "Rook" and piece.color == self.turn:
                             rooks.append([loc[0], loc[1]])
                         break
                     loc[0] += direction[0]
@@ -191,7 +193,7 @@ class Board:
                 while 0 <= loc[0] <= 7 and 0 <= loc[1] <= 7:
                     piece = self.board[loc[1]][loc[0]]
                     if piece is not None:
-                        if piece.name == "Bishop" and piece.color == self.TURN:
+                        if piece.name == "Bishop" and piece.color == self.turn:
                             bishop = [loc[0], loc[1]]
                         break
                     loc[0] += direction[0]
@@ -213,7 +215,7 @@ class Board:
                 for x in range(len(self.board[y])):
                     piece = copy.deepcopy(self.board[y][x])
                     if piece is not None:
-                        if self.TURN == piece.color and piece.name == "Knight":
+                        if self.turn == piece.color and piece.name == "Knight":
                             print(f"{piece} is at {x}, {y}")
                             if abs(y - destination[1]) == 2 and abs(x - destination[0]) == 1 or abs(x - destination[0]) == 2 and abs(y- destination[1]) == 1:
                                 origin = [x, y]
@@ -233,20 +235,39 @@ class Board:
             notation = notation[0] + 'x' + notation[1:]
 
         if move_now:
-            if self.move((origin, destination)):
-                self.LOG.append(notation)
+            self.move((origin, destination), notation)
 
         return (origin, destination)
 
-    def move(self, move):
+    def move(self, move, notation):
         origin = move[0]
         destination = move[1]
         print(origin)
         print(destination)
         piece = copy.deepcopy(self.board[origin[1]][origin[0]])
+        backup = copy.deepcopy(self.board[destination[1]][destination[0]])
         if piece.verify_move(self.board, move):
             self.board[origin[1]][origin[0]] = None
             self.board[destination[1]][destination[0]] = piece
+
+            # Check if player moving remained in check
+            if self.check_check(self.turn):
+                print(self.LOG[-1][-1])
+                if self.LOG[-1][-1] == '+':
+                    print("You are in check, you must move out of check.")
+                    # The most recent move did not relieve check, belay
+                    self.board[origin[1]][origin[0]] = piece
+                    self.board[destination[1]][destination[0]] = backup
+                    self.invalid_move(move)
+                    return False
+            
+            # Check if opponent was placed in check
+            if self.check_check(abs(self.turn - 1)):
+                print("Check!")
+                notation += '+'
+                # TODO: Check for checkmate
+                
+            self.LOG.append(notation)
             self.end_turn()
             return True
         else:
@@ -254,22 +275,35 @@ class Board:
         return False
 
     def end_turn(self):
-        if self.TURN:
-            self.TURN = 0
+        if self.turn:
+            self.turn = 0
         else:
-            self.TURN = 1
+            self.turn = 1
 
     def invalid_move(self, move):
         print("This move is not valid, please enter a valid move.")
         return True
+
+    def check_check(self, color):
+        # Find the enemy King on the board
+        for y in range(len(self.board)):
+            for x in range(len(self.board[y])):
+                if self.board[y][x] is not None:
+                    piece = self.board[y][x]
+                    if piece.color == color and piece.name == "King":
+                        # Check for check by running verify move on stationary king
+                        if self.verbose:
+                            print(f"Checking {'Black' if self.turn else 'White'} king at {[x, y]} for checks.")
+                        # Return opposite of verify move (move verify `True` = no check, verify `False` = check)
+                        return not piece.verify_move(self.board, [[x, y], [x, y]])
 
     def log(self):
         s = ""
         for i in range(len(self.LOG)):
             if i % 2 == 0 and i + 1 < len(self.LOG):
                 s += f"{i // 2 + 1}. {self.LOG[i]}    {self.LOG[i+1]} \n"
-            elif i + 1 == len(self.LOG):
-                s += f"{i // 2 + 1}. {self.LOG[i]} \n"
+        if not self.turn:
+            s += f"{i // 2 + 1}. {self.LOG[i]} \n"
         return s
 
 
@@ -358,30 +392,11 @@ class Piece:
         return self.printW(self.name[0]) if self.color else self.printB(self.name[0].lower())
 
 
-
 class King(Piece):
     name = "King"
     pt_val = None
 
     def verify_move(self, board, move):
-        # This verification needs to be the most rigid:
-        # - Cannot move into check!!
-        # - - Diagonals are clear of Bishops and Queens
-        # - - Rank/Files are clear of Rooks and Queens
-        # - - No Knights in relevant spaces
-        # - - No diagonal (single space) Pawns
-        # Consider making "threatening() function to return threatened spaces?
-
-        # 0. check for knights...
-        # Move in every direction until hitting 
-        # 1. end of board, fine
-        # 2. same-color piece, fine
-        # 3. opposite-color piece, check:
-        #   i. diagonal B/Q: False
-        #   ii. horiz/vert R/Q: False
-        #   iii. pawns within 1 space: False
-        # 4. All clear!
-
         origin = move[0]
         destination = move[1]
 
@@ -394,11 +409,13 @@ class King(Piece):
         # Check for Knights
         for spot in [[-2, -1], [-2, 1], [2, -1], [2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2]]:
             try:
-                encounter = board[destination[1] + spot[1]][destination[0] + spot[0]]
-                if encounter.name == "Knight" and encounter.color != self.color:
-                    if self.verbose:
-                        print("Enemy knight threatens this space. You cannot move into check.")
-                    return False
+                location = [destination[1] + spot[1], destination[0] + spot[0]]
+                if all(x > 0 for x in location):
+                    encounter = board[location[1]][location[0]]
+                    if encounter.name == "Knight" and encounter.color != self.color:
+                        if self.verbose:
+                            print(f"Enemy knight at {[destination[1] + spot[1], destination[0] + spot[0]]}threatens this space. You cannot move into check.")
+                        return False
             except (IndexError, AttributeError):
                 pass
 
