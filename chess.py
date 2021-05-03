@@ -39,7 +39,7 @@ class Board:
                     item.verbose = True
 
     def __str__(self):
-        greybg = '\033[47m'
+        greybg = '\033[41m'
         blackbg = '\033[00m'
         s = '  +---+---+---+---+---+---+---+---+ \n'
         for y in range(len(self.board)):
@@ -252,7 +252,6 @@ class Board:
 
             # Check if player moving remained in check
             if self.check_check(self.turn):
-                print(self.LOG[-1][-1])
                 if self.LOG[-1][-1] == '+':
                     print("You are in check, you must move out of check.")
                     # The most recent move did not relieve check, belay
@@ -266,7 +265,7 @@ class Board:
                 print("Check!")
                 notation += '+'
                 # TODO: Check for checkmate
-                
+
             self.LOG.append(notation)
             self.end_turn()
             return True
@@ -378,8 +377,8 @@ class Piece:
         return True
 
     def printB(self, text):
-        # red
-        return "\033[91m" + text + "\033[00m"
+        # green
+        return "\033[92m" + text + "\033[00m"
 
     def printW(self, text):
         # cyan
