@@ -246,6 +246,7 @@ class Board:
         print(destination)
         piece = copy.deepcopy(self.board[origin[1]][origin[0]])
         backup = copy.deepcopy(self.board[destination[1]][destination[0]])
+        
         if piece.verify_move(self.board, move):
             self.board[origin[1]][origin[0]] = None
             self.board[destination[1]][destination[0]] = piece
@@ -313,7 +314,7 @@ class Piece:
 
     def __init__(self, color):
         self.color = color
-        self.verbose = False
+        self.verbose = True
 
     def check_horizontal(self, board, move):
         begin = min(move[0][0], move[1][0])
@@ -470,10 +471,10 @@ class Queen(Piece):
         if move[0][0] != move[1][0] and move[0][1] != move[1][1]:
             return self.check_diagonal(board, move)
 
-        elif move[0][0] == move[1][0]:
+        elif move[0][1] == move[1][1]:
             return self.check_horizontal(board, move)
 
-        elif move[0][1] == move[1][1]: 
+        elif move[0][0] == move[1][0]: 
             return self.check_vertical(board, move)
 
         return False
